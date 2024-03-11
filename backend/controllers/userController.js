@@ -402,11 +402,11 @@ exports.sendOtp = catchAsyncErrors(async (req, res, next) => {
 });
 
 exports.refreshJwtToken = catchAsyncErrors(async (req, res, next) => {
-  const { token } = req.cookies;
-  if (!token) {
+  const { authorization } = req.headers;
+  if (!authorization) {
     return next(new ErrorHandler("Please login to access this resource", 401));
   }
-  const data = jwt.decode(token);
+  const data = jwt.decode(authorization);
   const user = await User.findById(data.id);
   sendToken(user, 200, res);
 });
