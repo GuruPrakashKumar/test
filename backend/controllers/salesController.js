@@ -14,7 +14,7 @@ function concatenateValues(obj) {
 
 // Create new sales Order
 exports.newSalesOrder = catchAsyncErrors(async (req, res, next) => {
-  const { orderItems, modeOfPayment, party, invoiceNum, reciverName, gst, businessName, businessAddress, kotId  } = req.body;
+  const { orderItems, modeOfPayment, party, invoiceNum, reciverName, gst, businessName, businessAddress, kotId } = req.body;
   const indiaTime = moment.tz('Asia/Kolkata');
   const currentDateTimeInIndia = indiaTime.format('YYYY-MM-DD HH:mm:ss');
 
@@ -77,7 +77,7 @@ exports.newSalesOrder = catchAsyncErrors(async (req, res, next) => {
       businessName,
       businessAddress,
       gst,
-      kotId 
+      kotId
     });
 
     // Increment numSales in User model
@@ -127,6 +127,10 @@ exports.getSingleSalesOrder = catchAsyncErrors(async (req, res, next) => {
 
   const salesOrder = await SalesOrder.findOne({ invoiceNum, 'user': userId })
     .populate("user", "name email")
+    .populate({
+      path: 'orderItems.product',
+      model: 'inventory',
+    })
     .populate({
       path: 'orderItems.membership',
       model: 'MembershipPlans',
@@ -418,5 +422,30 @@ exports.resetSalesCount = catchAsyncErrors(async (req, res, next) => {
     });
   } catch (err) {
     return next(new ErrorHandler("Error resetting sales count", 500));
+  }
+});
+
+//----Delete Sales using Invoice number-----------
+exports.deleteUsingInvoiceNum = catchAsyncErrors(async (req, res, next) => {
+  const invoiceNumToDelete = req.params.invoiceNum;
+  const userId = req.user;
+
+  try {
+    await SalesOrder.deleteOne({ invoiceNum: invoiceNumToDelete, user: userId });
+
+    const salesToUpdate = await SalesOrder.find({ invoiceNum: { $gt: invoiceNumToDelete }, user: userId });
+
+    for (const sale of salesToUpdate) {
+      const currentInvoiceNum = parseInt(sale.invoiceNum, 10);
+      if (parseInt(invoiceNumToDelete, 10) < currentInvoiceNum) {
+        sale.invoiceNum = (currentInvoiceNum - 1).toString();
+        await sale.save();
+      }
+    }
+
+    res.status(200).json({ message: `Sale with invoice number ${invoiceNumToDelete} deleted successfully.` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });

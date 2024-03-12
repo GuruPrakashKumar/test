@@ -33,11 +33,8 @@ exports.getReportofUser = catchAsyncErrors(async (req, res, next) => {
       createdAt: { $gte: start_date, $lte: end_date },
       user: user,
     }).populate([
-      {
-        path: "orderItems",
-        populate: { path: "product", model: InventoryModel },
-        populate: { path: "membership", select: "plan validity sellingPrice basePrice GSTincluded GSTRate CGST SGST IGST membershipType" }
-      },
+      { path: "orderItems.product", model: 'inventory' },
+      { path: "orderItems.membership", select: "plan validity sellingPrice basePrice GSTincluded GSTRate CGST SGST IGST membershipType" },
       "party",
       { path: "user", select: "taxFile" },
     ]);

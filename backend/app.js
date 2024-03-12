@@ -11,6 +11,7 @@ const multer = require("multer");
 var busboy = require("connect-busboy");
 const Inventory = require("./models/inventoryModel");
 const schedule = require("node-schedule");
+const moment = require('moment-timezone');
 
 // const passport = require('passport');
 // const passportLocal = require('./config/passport-local-strategy');
@@ -328,29 +329,25 @@ app.get('/api/v1/current-date', (req, res) => {
 
 app.use(express.static(path.join(__dirname, "build")));
 
+app.put("/add-sub-status", async (req, res, next) => {
+  try {
+    await User.updateMany({}, { subscription_status: 'active' });
+
+    res.status(200).json({ success: true, message: 'Subscription status updated for all users' });
+  } catch (error) {
+    next(error);
+  }
+});
 
 //--Razorpay Webhook---------------
 app.post("/verification/razor", async (req, res, next) => {
-
   const SECRET = "secretSarthak_123456789";
-
-  console.log("verification - razorpay")
-
   const subs_id = req.body.payload.subscription.entity.id;
   const subs_status = req.body.payload.subscription.entity.status;
-
-  console.log(subs_id);
-
   const User = await userModel.findOne({ subscription_id: subs_id });
-
   User.subscription_status = subs_status;
-
   await User.save();
-
-  console.log(user)
-
   res.json({ status: 'ok' });
-
 })
 
 app.get("*", (req, res) => {
@@ -363,7 +360,6 @@ app.use(errorMiddleware);
 // const forceUpdate = require("./routes/forceUpdateRoute");
 
 //-----------------Run Job schedule--------------------
-const moment = require('moment-timezone');
 
 function currentDate() {
   const indiaTime = moment.tz('Asia/Kolkata');
