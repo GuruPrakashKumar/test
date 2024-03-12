@@ -20,7 +20,7 @@ exports.isAuthenticatedUser = catchAsyncErrors(async (req, res, next) => {
   try {
     const decodedData = jwt.verify(authorization, process.env.JWT_SECRET);
     req.user = await User.findById(decodedData.id);
-    const decodedData = jwt.verify(token, process.env.JWT_SECRET);
+    // const decodedData = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decodedData.id);
     req.user = user;
 
